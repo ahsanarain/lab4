@@ -1,0 +1,35 @@
+.navbar{ 
+	background:#F97300;
+}
+.nav-link , .navbar-brand{ 
+	color: #f4f4f4; 
+	cursor: pointer;
+}
+.nav-link{ 
+	margin-right: 1em !important;
+}
+.nav-link:hover{ 
+	background: #f4f4f4; 
+	color: #f97300; 
+}
+.navbar-collapse{ 
+	justify-content: flex-end;  /*because bootstrap grid is built with flexbox system so for alignment you have to use a Flexbox property. */
+}
+.navbar-toggler{  
+	background:#fff !important;
+	
+}
+.carousel-item {
+  height: 100vh;
+  min-height: 350px;
+  background: no-repeat center center scroll;
+  -webkit-background-size: cover;
+  -moz-background-size: cover;
+  -o-background-size: cover;
+  background-size: cover;
+}
+
+
+
+
+

@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+	<title>Online Chat</title>
+	<link rel="stylesheet" href="./css/home.css" type="text/css" >
+	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.3.1/css/all.css" integrity="sha384-mzrmE5qonljUremFsqc01SB46JvROS7bZs3IO2EmfFsd15uHvIt+Y8vEf7N7fWAU" crossorigin="anonymous">
+	<!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"> -->
+	<style >
+
+<style>
+            @media only screen and (max-width : 540px) 
+            {
+                .chat-sidebar
+                {
+                    display: none !important;
+                }
+                
+                .chat-popup
+                {
+                    display: none !important;
+                }
+            }
+            
+            body
+            {
+                background-color: #e9eaed;
+            }
+            
+            .chat-sidebar
+            {
+                width: 200px;
+                position: fixed;
+                height: 100%;
+                right: 0px;
+                top: 0px;
+                padding-top: 10px;
+                padding-bottom: 10px;
+                border: 1px solid rgba(29, 49, 91, .3);
+            }
+            
+            .sidebar-name 
+            {
+                padding-left: 10px;
+                padding-right: 10px;
+                margin-bottom: 4px;
+                font-size: 12px;
+            }
+            
+            .sidebar-name span
+            {
+                padding-left: 5px;
+            }
+            
+            .sidebar-name a
+            {
+                display: block;
+                height: 100%;
+                text-decoration: none;
+                color: inherit;
+            }
+            
+            .sidebar-name:hover
+            {
+                background-color:#e1e2e5;
+            }
+            
+            .sidebar-name img
+            {
+                width: 32px;
+                height: 32px;
+                vertical-align:middle;
+            }
+            
+            .popup-box
+            {
+                display: none;
+                position: fixed;
+                bottom: 0px;
+                right: 220px;
+                height: 285px;
+                background-color: rgb(237, 239, 244);
+                width: 300px;
+                border: 1px solid rgba(29, 49, 91, .3);
+            }
+            
+            .popup-box .popup-head
+            {
+                background-color: #d21f3c;
+                padding: 5px;
+                color: white;
+                font-weight: bold;
+                font-size: 14px;
+                clear: both;
+            }
+            
+            .popup-box .popup-head .popup-head-left
+            {
+                float: left;
+            }
+            
+            .popup-box .popup-head .popup-head-right
+            {
+                float: right;
+                opacity: 0.5;
+            }
+            
+            .popup-box .popup-head .popup-head-right a
+            {
+                text-decoration: none;
+                color: inherit;
+            }
+            
+            .popup-box .popup-messages
+            {
+                height: 100%;
+                overflow-y: scroll;
+            }
+            
+
+
+        </style>
+        
+	</style>
+<script> 
+Array.remove = function(array, from, to) {
+                var rest = array.slice((to || from) + 1 || array.length);
+                array.length = from < 0 ? array.length + from : from;
+                return array.push.apply(array, rest);
+            }
+ //this variable represents the total number of popups can be displayed according to the viewport width
+            var total_popups = 0;
+            
+            //arrays of popups ids
+            var popups = [];
+        
+            //this is used to close a popup
+            function close_popup(id)
+            {
+                for(var iii = 0; iii < popups.length; iii++)
+                {
+                    if(id == popups[iii])
+                    {
+                        Array.remove(popups, iii);
+                        
+                        document.getElementById(id).style.display = "none";
+                        
+                        calculate_popups();
+                        
+                        return;
+                    }
+                }   
+            }
+        
+            //displays the popups. Displays based on the maximum number of popups that can be displayed on the current viewport width
+            function display_popups()
+            {
+                var right = 220;
+                
+                var iii = 0;
+                for(iii; iii < total_popups; iii++)
+                {
+                    if(popups[iii] != undefined)
+                    {
+                        var element = document.getElementById(popups[iii]);
+                        element.style.right = right + "px";
+                        right = right + 320;
+                        element.style.display = "block";
+                    }
+                }
+                
+                for(var jjj = iii; jjj < popups.length; jjj++)
+                {
+                    var element = document.getElementById(popups[jjj]);
+                    element.style.display = "none";
+                }
+            }
+            
+            //creates markup for a new popup. Adds the id to popups array.
+            function register_popup(id, name)
+            {
+                
+                for(var iii = 0; iii < popups.length; iii++)
+                {   
+                    //already registered. Bring it to front.
+                    if(id == popups[iii])
+                    {
+                        Array.remove(popups, iii);
+                    
+                        popups.unshift(id);
+                        
+                        calculate_popups();
+                        
+                        
+                        return;
+                    }
+                }               
+                
+                var element = '<div class="popup-box chat-popup" id="'+ id +'">';
+                element = element + '<div class="popup-head">';
+                element = element + '<div class="popup-head-left">'+ name +'</div>';
+                element = element + '<div class="popup-head-right"><a href="javascript:close_popup(\''+ id +'\');">&#10005;</a></div>';
+                element = element + '<div style="clear: both"></div></div><div class="popup-messages"></div></div>';
+                
+                document.getElementsByTagName("body")[0].innerHTML = document.getElementsByTagName("body")[0].innerHTML + element;  
+        
+                popups.unshift(id);
+                        
+                calculate_popups();
+                
+            }
+            
+            //calculate the total number of popups suitable and then populate the toatal_popups variable.
+            function calculate_popups()
+            {
+                var width = window.innerWidth;
+                if(width < 540)
+                {
+                    total_popups = 0;
+                }
+                else
+                {
+                    width = width - 200;
+                    //320 is width of a single popup box
+                    total_popups = parseInt(width/320);
+                }
+                
+                display_popups();
+                
+            }
+            
+            //recalculate when window is loaded and also when window is resized.
+            window.addEventListener("resize", calculate_popups);
+            window.addEventListener("load", calculate_popups);
+/*function rusabSelected(){
+	var rusab = document.getElementsByClassName("rusab");
+	alert(rusab);
+	// document.getElementByClassName("chatBox").style.display = "inline-block";
+	document.getElementById("chatbox").style.display = "block";
+}*/
+
+</script>
+</head>
+<body>
+	<div class="nav_menu">
+		<p class="title">Easy <span class="main_heart_icon"><i class="far fa-heart"></i></span> Connect</p>
+		<div class="nav_button">
+			<a href="#">Home</a>
+			<a href="#">Contact Us</a>
+			<a href="#">About Us</a>
+			<a href="#">Sign Up</a>
+			<a href="#">Login</a>
+			<a href="#">Random Chat</a>
+		</div>
+	</div>
+	<div class="main_image">
+		<div class="main_text">
+			<div class="easy_connect">
+				<h2 style="font-size:35px;">Easy Connect</h2>
+				<h1 style="font-size:40px;">We Connect People Easily</h1>
+			</div>
+			
+		</div>
+	</div><br><br><br>
+	<div class="main_container">
+<!-- 		<header>
+			<div class="main_icon">
+				<img src="./images/icon.png" alt="icon" width="280" height="230" >
+			</div>
+		</header> -->
+
+		<section>
+			<nav>
+				<div class="online_friends">
+					<h1 style="font-size:35px;">Online Friends</h1>
+				</div>
+				<div class="friends">
+					<span>
+						<a href="javascript:register_popup('rusab khan', 'Rusab Khan');">
+						<div class="pro_image" >
+							<img src="./images/rusab.jpg" alt="rusab" width="50" height="40" class="pro_image">
+						</div>
+						<span class="friends_name rusab">  Rusab Khan</span>
+					</a>
+					</span>
+				</div>
+				<div class="friends">
+					<span >
+						<a href="javascript:register_popup('ahsan', 'Ahsan');">
+						<div class="pro_image" >
+							<img src="./images/ahsan.jpg" alt="ahsan" width="50" height="40" class="pro_image">
+						</div>
+						<span class="friends_name ahsan">  Ahsan Arain</span>
+					</a>
+					</span>
+				</div>
+				<div class="friends">
+					<span >
+						<a href="javascript:register_popup('emmi', 'Emmi');">
+						<div class="pro_image" >
+							<img src="./images/ayman.jpg" alt="ayman" width="50" height="40" class="pro_image">
+						</div>
+						<span class="friends_name emmi">Emmi Shaikh</span>
+					</a>
+					</span>
+				</div>
+				<div class="friends">
+					<span >
+						<a href="javascript:register_popup('fahad', 'Fahad');">
+						<div class="pro_image" >
+							<img src="./images/fahad.jpg" alt="fahad" width="50" height="40" class="pro_image">
+						</div>
+						<span class="friends_name fahad">Fahad Rajput</span>
+					</a>
+					</span>
+				</div>
+				<div class="friends">
+					<span >
+						<a href="javascript:register_popup('daniyal', 'Daniyal');">
+						<div class="pro_image" >
+							<img src="./images/daniyal.jpg" alt="daniyal" width="50" height="40" class="pro_image">
+						</div>
+						<span class="friends_name daniyal">Daniyal Ahmed</span>
+					</a>
+					</span>
+				</div>
+			</nav>
+			<div class="separator">
+			</div>
+			<article class="chatBox" id="chatbox">
+				<div class="title_bar">
+					<span>
+						<div class="pro_pic">
+							<img src="./images/rusab.jpg" alt="rusab" width="50" height="40" class="pro_pic_img">
+						</div>  
+						<span style="font-size:35px;font-weight:bold;margin-left:80px;top:5px;position:absolute;">Rusab Khan</span>
+					</span>
+				</div>
+				<div class="msg_body">
+					<div class="my_msgs">hi!!</div><br>
+					<div class="friends_msgs">hi</div><br>
+					<div class="my_msgs" style="top:100px;">Where are you from?</div><br>
+					<div class="friends_msgs" style="top:150px;">US</div><br>
+					<div class="friends_msgs" style="top:200px;">You?</div><br>
+					<div class="my_msgs" style="top:250px;">Pakistan.</div><br>
+					<div class="my_msgs" style="top:300px;">Were you born in Us?</div><br>
+					<div class="friends_msgs" style="top:350px;">No</div><br>
+					<div class="friends_msgs" style="top:400px;">I was born in Karachi,Pakistan.</div><br>
+					<div class="friends_msgs" style="top:450px;">I am currently working in US as software Engineer</div><br>
+					<div class="my_msgs" style="top:500px;">that's good!</div><br>
+					<div class="friends_msgs" style="top:550px;">What are you doing?</div><br>
+					<div class="my_msgs" style="top:600px;">Studying.</div><br>
+					<div class="my_msgs" style="top:650px;">Software engineering 4rth year.</div><br>
+
+				</div>
+				<div class="msg_input">
+					<span>
+						<input class="msg_field"type="text" placeholder="write message here...">
+						<!-- <div class="send_message"><i class="fa fa-send-o" style="margin-top:8px;margin-left:-5px;"></i></div> -->
+						<div class="send_message"><img src="./images/send.png" alt="send" class="send_message_image"></div>
+						<!-- width="68px" height="50px" style="border-radius:50%;" -->
+					</span>
+				</div>
+			</article>
+		</section>
+	</div><br><br><br>
+	<footer>
+		<div class="footer_container">
+			<div class="navigation_icon">
+				<a href="#">Home</a>
+				<a href="#">Contact Us</a>
+				<a href="#">About Us</a>
+				<a href="#">Sign Up</a>
+				<a href="#">Login</a>
+				<a href="#">Random Chat</a>
+			</div>
+		</div>
+		<div style="border:1px solid white;width:100%;height:0px;margin-top:20px;"></div><br>
+		<div class="social_icon_container">
+			<div class="social_icons">
+				<div class="social_icon">
+					<a ><i class="fab fa-facebook-f"></i></a>
+				</div>
+			</div>
+			<div class="social_icons">
+				<div class="social_icon">
+					<a ><i class="fab fa-youtube"></i></a>
+				</div>
+			</div>
+			<div class="social_icons">
+				<div class="social_icon">
+					<a ><i class="fab fa-linkedin"></i></a>
+				</div>
+			</div>
+			<div class="social_icons">
+				<div class="social_icon">
+					<a ><i class="fab fa-twitter"></i></a>
+				</div>
+			</div>
+			<div class="social_icons">
+				<div class="social_icon">
+					<a ><i class="fab fa-instagram"></i></a>
+				</div>
+			</div>
+		</div><br>
+		<div class="contact_info">
+			<span >
+				<div class="contact_icon"><i class="far fa-envelope"></i></div>
+				<span>kamran8545@gmail.com</span>
+			</span>
+
+			<span style="margin-left:30px;">
+				<div class="contact_icon"><i class="fas fa-phone"></i></div>
+				<span>+923333945428</span>
+			</span>
+			
+			<span style="margin-left:30px;">
+				<div class="contact_icon"><i class="fas fa-home"></i></div>
+				<span>Kotri city, district Jamshoro ,Sindh Pakistan</span>
+			</span>
+		</div>
+		<div style="border:1px solid white;width:100%;height:0px;margin-top:10px;"></div><br>
+		<div class="copyright">
+			<span>
+				<div class="copyright_icon"><i class="far fa-copyright"></i></div>
+				<span>2018 Kamran Khan. All rights Reserved.</span>
+			</span>
+		</div>
+	</footer>
+
+</body>
+</html>
